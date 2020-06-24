@@ -75,7 +75,9 @@ function action() {
             "Update Employee Role",
             "Update Employee Manager",
             "Delete Department",
-            "Delete Role"
+            "Delete Role",
+            "Delete Employee",
+            "View Utilized Budget By Department"
         ]
     }).then((answer) => {
         switch (answer.action) {
@@ -121,6 +123,14 @@ function action() {
 
             case "Delete Role":
                 deleteRole();
+                break;
+
+            case "Delete Employee":
+                deleteEmployee();
+                break;
+
+            case "View Utilized Budget By Department":
+                deptBudget();
                 break;
 
         }
@@ -287,33 +297,33 @@ function addEmployee() {
             (err, res) => {
                 const role = res[0].id;
                 let mgr;
-                    const name = answer.mgr.split(" ")
-                    connection.query("SELECT id FROM employee WHERE ? AND ?",
-                        [{
-                            first_name: name[0]
-                        },
-                        {
-                            last_name: name[1]
-                        }],
-                        (err, res) => {
-                            if (!res.length) {
-                                mgr = null;
-                            } else {
-                                mgr = res[0].id
-                            }
-                            connection.query("INSERT INTO employee SET ?",
-                                {
-                                    first_name: answer.firstName,
-                                    last_name: answer.lastName,
-                                    role_id: role,
-                                    manager_id: mgr
-                                },
-                                (err) => {
-                                    if (err) throw err;
-                                    console.log("Employee added!")
-                                    action();
-                                })
-                        })
+                const name = answer.mgr.split(" ")
+                connection.query("SELECT id FROM employee WHERE ? AND ?",
+                    [{
+                        first_name: name[0]
+                    },
+                    {
+                        last_name: name[1]
+                    }],
+                    (err, res) => {
+                        if (!res.length) {
+                            mgr = null;
+                        } else {
+                            mgr = res[0].id
+                        }
+                        connection.query("INSERT INTO employee SET ?",
+                            {
+                                first_name: answer.firstName,
+                                last_name: answer.lastName,
+                                role_id: role,
+                                manager_id: mgr
+                            },
+                            (err) => {
+                                if (err) throw err;
+                                console.log("Employee added!")
+                                action();
+                            })
+                    })
 
             });
     })
@@ -554,6 +564,77 @@ function deleteRole() {
         connection.query(`DELETE FROM role WHERE title = "${answer.role}"`, (err) => {
             if (err) throw err;
             console.log("Role deleted!");
+            action();
+        })
+    })
+}
+
+function deleteEmployee() {
+    connection.query('SELECT CONCAT(first_name, " ", last_name) FROM employee', (err, res) => {
+        let employees = [];
+        for (let i = 0; i < res.length; i++) {
+            const name = res[i]['CONCAT(first_name, " ", last_name)'];
+            employees.push(name);
+        }
+        inquirer.prompt([{
+            type: "list",
+            name: "employee",
+            message: "Which employee would you like to delete?",
+            choices: employees
+        }
+        ]).then((answer) => {
+            const name = answer.employee.split(" ")
+            connection.query("DELETE FROM employee WHERE ? AND ?",
+                [
+                    {
+                        first_name: name[0]
+                    },
+                    {
+                        last_name: name[1]
+                    }
+                ], (err) => {
+                    if (err) throw err;
+                    console.log("Employee Deleted!")
+                    action();
+                })
+        })
+    });
+}
+
+function deptBudget() {
+    inquirer.prompt({
+        type: "list",
+        name: "dept",
+        message: "Which department would you like to view?",
+        choices: departments
+    }).then((answer) => {
+        const query =
+            `SELECT
+                employee.id,
+                employee.first_name,
+                employee.last_name,
+                role.title,
+                role.salary,
+                department.department,
+                CONCAT(m.first_name, " ", m.last_name) as "manager"
+            FROM
+                employee
+            INNER JOIN
+                role
+            ON employee.role_id = role.id
+            INNER JOIN
+                department
+            ON role.department_id = department.id
+            LEFT OUTER JOIN employee m
+            ON employee.manager_id = m.id
+            WHERE department = "${answer.dept}"`
+        connection.query(query, (err, res) => {
+            let total = 0;
+            for (let i = 0; i < res.length; i++) {
+                const salary = res[i].salary;
+                total += salary;
+            }
+            console.log(`Utilized budget for ${answer.dept} is $${total}`);
             action();
         })
     })
