@@ -188,3 +188,37 @@ function viewAllByDepartment() {
     })
 };
 
+function viewAllByManager() {
+    inquirer.prompt({
+        type: "list",
+        name: "manager",
+        message: "Which manager would you like to view?",
+        choices: managers
+    }).then((answer) => {
+        const query =
+            `SELECT
+	            employee.id,
+                employee.first_name,
+                employee.last_name,
+                role.title,
+                role.salary,
+                department.department,
+                CONCAT(m.first_name, " ", m.last_name) as "manager"
+            FROM
+	            employee
+            INNER JOIN
+	            role
+            ON employee.role_id = role.id
+            INNER JOIN
+	            department
+            ON role.department_id = department.id
+            LEFT OUTER JOIN employee m
+            ON employee.manager_id = m.id
+            HAVING manager = "${answer.manager}"`
+        connection.query(query, (err, res) => {
+            console.table(res);
+            action();
+        })
+    })
+};
+
