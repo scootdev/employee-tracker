@@ -154,3 +154,37 @@ function viewAll() {
     });
 };
 
+function viewAllByDepartment() {
+    inquirer.prompt({
+        type: "list",
+        name: "department",
+        message: "Which department would you like to view?",
+        choices: departments
+    }).then((answer) => {
+        const query =
+            `SELECT
+            employee.id,
+            employee.first_name,
+            employee.last_name,
+            role.title,
+            role.salary,
+            department.department,
+            CONCAT(m.first_name, " ", m.last_name) as "manager"
+        FROM
+            employee
+        INNER JOIN
+            role
+          ON employee.role_id = role.id
+        INNER JOIN
+            department
+          ON role.department_id = department.id
+        LEFT OUTER JOIN employee m
+          ON employee.manager_id = m.id
+        WHERE department = "${answer.department}"`
+        connection.query(query, (err, res) => {
+            console.table(res);
+            action();
+        })
+    })
+};
+
