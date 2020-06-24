@@ -529,3 +529,32 @@ function updateMgr() {
     });
 }
 
+function deleteDept() {
+    inquirer.prompt({
+        type: "list",
+        name: "dept",
+        message: "Which department would you like to delete?",
+        choices: departments
+    }).then((answer) => {
+        connection.query(`DELETE FROM department WHERE department = "${answer.dept}"`, (err) => {
+            if (err) throw err;
+            console.log("Department deleted!");
+            action();
+        })
+    })
+}
+
+function deleteRole() {
+    inquirer.prompt({
+        type: "list",
+        name: "role",
+        message: "Which role would you like to delete?",
+        choices: roles
+    }).then((answer) => {
+        connection.query(`DELETE FROM role WHERE title = "${answer.role}"`, (err) => {
+            if (err) throw err;
+            console.log("Role deleted!");
+            action();
+        })
+    })
+}
