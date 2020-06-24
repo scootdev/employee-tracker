@@ -127,3 +127,30 @@ function action() {
     });
 };
 
+function viewAll() {
+    const query =
+        `SELECT
+        employee.id,
+        employee.first_name,
+        employee.last_name,
+        role.title,
+        role.salary,
+        department.department,
+        CONCAT(m.first_name, " ", m.last_name) as "Manager"
+    FROM
+        employee
+    INNER JOIN
+        role
+      ON employee.role_id = role.id
+    INNER JOIN
+        department
+      ON role.department_id = department.id
+    LEFT OUTER JOIN employee m
+      ON employee.manager_id = m.id`
+
+    connection.query(query, (err, res) => {
+        console.table(res);
+        action();
+    });
+};
+
