@@ -474,3 +474,58 @@ function updateRole() {
     });
 };
 
+function updateMgr() {
+    connection.query('SELECT CONCAT(first_name, " ", last_name) FROM employee', (err, res) => {
+        let employees = [];
+        for (let i = 0; i < res.length; i++) {
+            const name = res[i]['CONCAT(first_name, " ", last_name)'];
+            employees.push(name);
+        }
+        inquirer.prompt([{
+            type: "list",
+            name: "employee",
+            message: "Which employee would you like to update?",
+            choices: employees
+        },
+        {
+            type: "list",
+            name: "manager",
+            message: "Who is their new manager?",
+            choices: employees
+        }
+        ]).then((answer) => {
+            if (answer.employee === answer.manager) {
+                console.log("Employee and manager cannot be the same person")
+                updateMgr();
+            }
+            const employeeName = answer.employee.split(" ");
+            const managerName = answer.manager.split(" ");
+            connection.query("SELECT id FROM employee WHERE ?",
+                [
+                    {
+                        first_name: managerName[0]
+                    },
+                    {
+                        last_name: managerName[1]
+                    }
+                ],
+                (err, res) => {
+                    connection.query("UPDATE employee SET ? WHERE ? AND ?",
+                        [{
+                            manager_id: res[0].id
+                        },
+                        {
+                            first_name: employeeName[0]
+                        },
+                        {
+                            last_name: employeeName[1]
+                        }], (err) => {
+                            if (err) throw err;
+                            console.log("Employee Manager Updated!")
+                            action();
+                        })
+                })
+        })
+    });
+}
+
