@@ -338,3 +338,95 @@ function addDept() {
     })
 }
 
+function addRole() {
+    inquirer.prompt(
+        [{
+            type: "input",
+            name: "title",
+            message: "What is the title of the new role?"
+        },
+        {
+            type: "number",
+            name: "salary",
+            message: "What is the salary of the new role?"
+        },
+        {
+            type: "list",
+            name: "dept",
+            message: "Which department is this role in?",
+            choices: departments
+        }]
+    ).then((answer) => {
+        connection.query(`SELECT id FROM department WHERE department = "${answer.dept}"`, (err, res) => {
+            const id = res[0].id;
+            connection.query("INSERT INTO role SET ?",
+                {
+                    title: answer.title,
+                    salary: answer.salary,
+                    department_id: id
+                },
+                (err) => {
+                    if (err) throw err;
+                    console.log("New role added!");
+                    action();
+                }
+            )
+        })
+    })
+}
+
+function getDepts() {
+    const query = "SELECT department FROM department"
+    connection.query(query, (err, res) => {
+        departments = [];
+        for (let i = 0; i < res.length; i++) {
+            const department = res[i].department;
+            departments.push(department);
+        }
+    })
+};
+
+function getRoles() {
+    const query = "SELECT title FROM role"
+    connection.query(query, (err, res) => {
+        roles = [];
+        for (let i = 0; i < res.length; i++) {
+            const role = res[i].title;
+            roles.push(role);
+        }
+    })
+};
+
+function getMgrs() {
+    const query =
+        `SELECT DISTINCT manager
+    FROM (
+    SELECT
+        employee.id,
+        employee.first_name,
+        employee.last_name,
+        role.title,
+        role.salary,
+        department.department,
+        CONCAT(m.first_name, " ", m.last_name) as "manager"
+    FROM
+        employee
+    INNER JOIN
+        role
+      ON employee.role_id = role.id
+    INNER JOIN
+        department
+      ON role.department_id = department.id
+    LEFT OUTER JOIN employee m
+      ON employee.manager_id = m.id
+    ) m`
+    connection.query(query, (err, res) => {
+        managers = ["None"]
+        for (let i = 1; i < res.length; i++) {
+            const manager = res[i].manager;
+            managers.push(manager);
+        }
+    })
+};
+
+
