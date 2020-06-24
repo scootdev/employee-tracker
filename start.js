@@ -256,3 +256,66 @@ function viewAllByRole() {
     })
 }
 
+function addEmployee() {
+    inquirer.prompt([{
+        type: "input",
+        name: "firstName",
+        message: "What is the employees first name?"
+    },
+    {
+        type: "input",
+        name: "lastName",
+        message: "What is the employees last name?"
+    },
+    {
+        type: "list",
+        name: "role",
+        message: "What is the employees role?",
+        choices: roles
+    },
+    {
+        type: "list",
+        name: "mgr",
+        message: "Who is the employees manager?",
+        choices: managers
+    }
+    ]).then((answer) => {
+        connection.query("SELECT id FROM role WHERE ?",
+            {
+                title: answer.role
+            },
+            (err, res) => {
+                const role = res[0].id;
+                let mgr;
+                    const name = answer.mgr.split(" ")
+                    connection.query("SELECT id FROM employee WHERE ? AND ?",
+                        [{
+                            first_name: name[0]
+                        },
+                        {
+                            last_name: name[1]
+                        }],
+                        (err, res) => {
+                            if (!res.length) {
+                                mgr = null;
+                            } else {
+                                mgr = res[0].id
+                            }
+                            connection.query("INSERT INTO employee SET ?",
+                                {
+                                    first_name: answer.firstName,
+                                    last_name: answer.lastName,
+                                    role_id: role,
+                                    manager_id: mgr
+                                },
+                                (err) => {
+                                    if (err) throw err;
+                                    console.log("Employee added!")
+                                    action();
+                                })
+                        })
+
+            });
+    })
+};
+
