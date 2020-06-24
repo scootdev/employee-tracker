@@ -429,4 +429,48 @@ function getMgrs() {
     })
 };
 
+function updateRole() {
+    connection.query('SELECT CONCAT(first_name, " ", last_name) FROM employee', (err, res) => {
+        let employees = [];
+        for (let i = 0; i < res.length; i++) {
+            const name = res[i]['CONCAT(first_name, " ", last_name)'];
+            employees.push(name);
+        }
+        inquirer.prompt([{
+            type: "list",
+            name: "employee",
+            message: "Which employee would you like to update?",
+            choices: employees
+        },
+        {
+            type: "list",
+            name: "role",
+            message: "What is their new role?",
+            choices: roles
+        }
+        ]).then((answer) => {
+            const name = answer.employee.split(" ")
+            connection.query("SELECT id FROM role WHERE ?",
+                {
+                    title: answer.role
+                },
+                (err, res) => {
+                    connection.query("UPDATE employee SET ? WHERE ? AND ?",
+                        [{
+                            role_id: res[0].id
+                        },
+                        {
+                            first_name: name[0]
+                        },
+                        {
+                            last_name: name[1]
+                        }], (err) => {
+                            if (err) throw err;
+                            console.log("Employee Role Updated!")
+                            action();
+                        })
+                })
+        })
+    });
+};
 
